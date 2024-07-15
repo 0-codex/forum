@@ -18,4 +18,21 @@ model User {
   email String @unique
   name String
   password String
+  posts Post[]
+}
+
+model Post {
+  id Int @id @default(autoincrement())
+  author User @relation(fields: [authorId], references: [id])
+  authorId Int
+  title String
+  content String
+  pages Page[]
+}
+
+model Page {
+  id Int @id @default(autoincrement())
+  userId Int
+  title String
+  posts Post[]
 }

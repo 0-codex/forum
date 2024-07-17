@@ -1,40 +1,51 @@
 import {NextRequest} from "next/server";
 import {PrismaClient} from "@prisma/client";
+import {IResponsePage} from "@/app/api/page/get/route";
+import {v7 as uuid} from "uuid"
 
 export async function POST(request: NextRequest) {
+    // Get form data
     const formData = await request.formData()
 
+    // Get data with form data
     const title = formData.get("title")
-    const userId = formData.get("userId")
+    const authorUUID = formData.get("authorUUID")
 
-    if (!title || !userId) return Response.json({}, {status: 400})
+    // return status 400 if data not exist
+    if (!title || !authorUUID) return Response.json({}, {status: 400})
 
+    // Create prisma client
     const prisma = new PrismaClient()
 
+    // Get user and return status 404 if user not found
     const user = await prisma.user.findUnique({
         where: {
-            id: parseInt(userId.toString())
+            uuid: authorUUID.toString()
         }
     })
-
     if (!user) return Response.json({}, {status: 404})
 
-    const resultCreate = await prisma.page.create({
+    // Create page with data
+    const newPage = await prisma.page.create({
         data: {
             title: title.toString(),
-            userId: parseInt(userId.toString()),
+            authorUUID: authorUUID.toString(),
+            uuid: uuid()
         }
     })
 
+    // Disconnect prisma
     prisma.$disconnect()
 
     return Response.json({
-        ...resultCreate,
+        ...newPage,
         user: {
-            id: user.id,
-            name: user.name,
-            email: user.email
+            email: user.email,
+            uuid: user.uuid,
+            phone: user.phone,
+            admin: user.admin,
+            username: user.username
         },
         posts: []
-    }, {status: 201})
+    } as IResponsePage, {status: 201})
 }

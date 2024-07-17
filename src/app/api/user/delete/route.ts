@@ -1,13 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-import {NextRequest} from "next/server";
-
-export interface IResponseUser {
-    email: string,
-    admin: boolean,
-    phone: string,
-    username: string,
-    uuid: string
-}
+import {PrismaClient} from "@prisma/client";
 
 export async function POST(request: Request){
     // Get form data
@@ -18,6 +9,9 @@ export async function POST(request: Request){
 
     // return status 400 if data not exist
     if(!uuid) return Response.json({}, {status: 400})
+
+    // return status 400 if data is not correct
+    if(!parseInt(uuid.toString())) return Response.json({}, {status: 400})
 
     // Create prisma client
     const prisma = new PrismaClient()
@@ -30,15 +24,16 @@ export async function POST(request: Request){
     })
     if (!user) return Response.json({}, {status: 404})
 
+    // Delete user
+    await prisma.user.delete({
+        where: {
+            uuid: user.uuid
+        }
+    })
+
     // Disconnect prisma
     prisma.$disconnect()
 
     // return status 200
-    return Response.json({
-        uuid: user.uuid,
-        phone: user.phone,
-        email: user.email,
-        admin: user.admin,
-        username: user.username
-    } as IResponseUser, {status: 200})
+    return Response.json({}, {status: 200})
 }

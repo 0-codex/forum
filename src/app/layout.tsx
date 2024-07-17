@@ -1,21 +1,26 @@
-import type { Metadata } from "next";
+import type {Metadata} from "next";
 import "./globals.css";
-import Header from "@/components/Header";
+import {getSession, SessionProvider} from "next-auth/react";
+import {getServerSession} from "next-auth/next";
+import {nextAuthConfig} from "@/app/api/auth/[...nextauth]/route";
+import Session from "@/components/Session";
 
 export const metadata: Metadata = {
-  title: "Forum",
+    title: "Forum",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
+export default async function RootLayout({children}: Readonly<{
+    children: React.ReactNode;
 }>) {
-  return (
-    <html lang="fr">
-      <body>
-        {children}
-      </body>
-    </html>
-  );
+    const session = await getServerSession(nextAuthConfig)
+
+    return (
+        <html lang="fr">
+            <body>
+                <Session>
+                    {children}
+                </Session>
+            </body>
+        </html>
+    );
 }

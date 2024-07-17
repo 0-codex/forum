@@ -1,8 +1,11 @@
+'use client'
+
 import {getServerSession} from "next-auth/next";
 import {nextAuthConfig} from "@/app/api/auth/[...nextauth]/route";
+import {useSession} from "next-auth/react";
 
-export default async function Header() {
-    const session = await getServerSession(nextAuthConfig)
+export default function Header() {
+    const session = useSession()
 
     return (
         <div className={"flex justify-between items-center px-[10vw] py-[2vw]"}>
@@ -12,7 +15,7 @@ export default async function Header() {
             <div></div>
             <div className={"flex gap-x-[0.5vw]"}>
                 {
-                    session ? (
+                    session.status == "authenticated" ? (
                         <>
                             <a className={"bg-palette-green-5 px-[1.5vw] py-[0.5vw] rounded font-semibold text-[0.8vw] hover:bg-palette-green-6 duration-150"}
                                href={"/api/auth/signout"}>Se Déconnecter</a>

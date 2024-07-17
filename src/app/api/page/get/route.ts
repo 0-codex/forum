@@ -1,64 +1,65 @@
 import {NextRequest} from "next/server";
 import {PrismaClient} from "@prisma/client";
-import {IUser} from "@/app/api/user/get/route";
+import {IResponseUser} from "@/app/api/user/get/route";
+import {IResponsePost} from "@/app/api/post/get/route";
 
-export interface IPost {
-    id: number,
-    authorId: number,
+export interface IResponsePage {
     title: string,
-    content: string,
-    pageId: number
-}
-
-export interface IPage {
-    id: number,
-    userId: number,
-    title: string,
-    posts: IPost[],
-    user: IUser
+    authorUUID: string,
+    uuid: string,
+    posts: IResponsePost[],
+    user: IResponseUser
 }
 
 export async function POST(request: NextRequest) {
+    // Get form data
     const formData = await request.formData()
 
-    const id = formData.get("id")
+    // Get data with form data
+    const uuid = formData.get("uuid")
 
-    if (!id) return Response.json({}, {status: 400})
+    // return status 400 if data not exist
+    if (!uuid) return Response.json({}, {status: 400})
 
+    // Create prisma client
     const prisma = new PrismaClient()
 
-    const resultPage = await prisma.page.findUnique({
+    // Find page in database and return status 404 if page not found
+    const page = await prisma.page.findUnique({
         where: {
-            id: parseInt(id.toString())
+            uuid: uuid.toString()
+        }
+    })
+    if (!page) return Response.json({}, {status: 404})
+
+    // Get all posts with pageId to page for get data
+    const posts = await prisma.post.findMany({
+        where: {
+            pageUUID: page.uuid
         }
     })
 
-    if (!resultPage) return Response.json({}, {status: 404})
-
-    const resultPosts = await prisma.post.findMany({
+    // Get user who created the page and return status 404 if not found
+    const user = await prisma.user.findUnique({
         where: {
-            page: resultPage
+            uuid: page.authorUUID
         }
     })
+    if (!user) return Response.json({}, {status: 404})
 
-    const resultUser = await prisma.user.findUnique({
-        where: {
-            id: resultPage.userId
-        }
-    })
-
-    if (!resultUser) return Response.json({}, {status: 404})
-
+    // Disconnect prisma
     prisma.$disconnect()
 
+    // return status 200 with data
     return Response.json({
-        ...resultPage,
-        posts:
-        resultPosts,
+        ...page,
+        posts: posts,
         user: {
-            id: resultUser.id,
-            email: resultUser.email,
-            name: resultUser.name
+            email: user.email,
+            uuid: user.uuid,
+            phone: user.phone,
+            admin: user.admin,
+            username: user.username
         }
-    } as IPage, {status: 200})
+    } as IResponsePage, {status: 200})
 }
